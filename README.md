@@ -1,2 +1,6 @@
 # moroccan-plates-finder
-Searches Moroccan Plates Easily
+Searches Moroccan Plates Easily.
+
+Uses Openstreetmap (embed).
+
+Vibe coded :/
