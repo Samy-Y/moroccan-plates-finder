@@ -1,0 +1,747 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PlateFinder</title>
+    
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin=""/>
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+        }
+
+        :root {
+            --bg-primary: #0a0a0a;
+            --bg-secondary: #1a1a1a;
+            --bg-card: #1e1e1e;
+            --bg-input: #2a2a2a;
+            --text-primary: #ffffff;
+            --text-secondary: #a0a0a0;
+            --text-muted: #666666;
+            --accent-primary: #3b82f6;
+            --accent-hover: #2563eb;
+            --accent-light: #1d4ed8;
+            --border-primary: #333333;
+            --border-secondary: #444444;
+            --success: #10b981;
+            --success-hover: #059669;
+            --danger: #ef4444;
+            --shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5);
+            --shadow-lg: 0 20px 40px -10px rgba(0, 0, 0, 0.7);
+            --radius: 12px;
+            --radius-lg: 16px;
+        }
+
+        body {
+            background: linear-gradient(135deg, var(--bg-primary) 0%, var(--bg-secondary) 100%);
+            color: var(--text-primary);
+            min-height: 100vh;
+            line-height: 1.6;
+            overflow-x: hidden;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 40px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .header h1 {
+            font-size: clamp(2.5rem, 6vw, 4rem);
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--accent-primary), var(--accent-light));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 10px;
+            letter-spacing: -0.02em;
+        }
+
+        .header h2 {
+            font-size: clamp(1.1rem, 3vw, 1.4rem);
+            color: var(--text-secondary);
+            font-weight: 400;
+            margin-bottom: 30px;
+        }
+
+        .forms-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 30px;
+            width: 100%;
+            max-width: 800px;
+        }
+
+        .form-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-primary);
+            border-radius: var(--radius-lg);
+            padding: 30px;
+            box-shadow: var(--shadow);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .form-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, var(--accent-primary), var(--accent-light));
+        }
+
+        .form-card:hover {
+            transform: translateY(-5px);
+            box-shadow: var(--shadow-lg);
+            border-color: var(--border-secondary);
+        }
+
+        .form-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin-bottom: 20px;
+            color: var(--text-primary);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .form-title::before {
+            content: '';
+            width: 8px;
+            height: 8px;
+            background: var(--accent-primary);
+            border-radius: 50%;
+        }
+
+        .input-group {
+            margin-bottom: 20px;
+        }
+
+        .input-label {
+            display: block;
+            font-size: 0.9rem;
+            font-weight: 500;
+            color: var(--text-secondary);
+            margin-bottom: 8px;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 16px 20px;
+            background: var(--bg-input);
+            border: 1px solid var(--border-primary);
+            border-radius: var(--radius);
+            color: var(--text-primary);
+            font-size: 1rem;
+            transition: all 0.3s ease;
+            outline: none;
+        }
+
+        .form-input:focus {
+            border-color: var(--accent-primary);
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+            transform: translateY(-1px);
+        }
+
+        .form-input::placeholder {
+            color: var(--text-muted);
+        }
+
+        .dropdown-input {
+            position: relative;
+        }
+
+        .dropdown-list {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: var(--bg-input);
+            border: 1px solid var(--border-primary);
+            border-top: none;
+            border-radius: 0 0 var(--radius) var(--radius);
+            max-height: 200px;
+            overflow-y: auto;
+            z-index: 1000;
+            display: none;
+        }
+
+        .dropdown-list.show {
+            display: block;
+        }
+
+        .dropdown-item {
+            padding: 12px 20px;
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+            border-bottom: 1px solid var(--border-primary);
+        }
+
+        .dropdown-item:hover {
+            background: var(--border-primary);
+        }
+
+        .dropdown-item:last-child {
+            border-bottom: none;
+        }
+
+        .search-btn {
+            width: 100%;
+            padding: 16px 24px;
+            background: linear-gradient(135deg, var(--accent-primary), var(--accent-light));
+            color: white;
+            border: none;
+            border-radius: var(--radius);
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-bottom: 20px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .search-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(59, 130, 246, 0.3);
+        }
+
+        .search-btn:active {
+            transform: translateY(0);
+        }
+
+        .result-container {
+            margin-top: 20px;
+        }
+
+        .result-input {
+            width: 100%;
+            padding: 16px 20px;
+            background: var(--bg-secondary);
+            border: 2px solid var(--success);
+            border-radius: var(--radius);
+            color: var(--text-primary);
+            font-size: 1.1rem;
+            font-weight: 600;
+            text-align: center;
+            outline: none;
+        }
+
+        .map-container {
+            width: 100%;
+            max-width: 800px;
+            margin-top: 20px;
+        }
+
+        #map {
+            height: 400px;
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow);
+            border: 1px solid var(--border-primary);
+        }
+
+        .divider {
+            width: 100%;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, var(--border-primary), transparent);
+            margin: 20px 0;
+        }
+
+        .footer {
+            text-align: center;
+            padding: 30px 20px;
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            border-top: 1px solid var(--border-primary);
+            margin-top: 40px;
+            width: 100%;
+        }
+
+        /* Mobile Optimizations */
+        @media (max-width: 768px) {
+            .container {
+                padding: 15px;
+                gap: 25px;
+            }
+
+            .forms-container {
+                grid-template-columns: 1fr;
+                gap: 20px;
+            }
+
+            .form-card {
+                padding: 20px;
+            }
+
+            .header h1 {
+                font-size: 2.5rem;
+            }
+
+            .header h2 {
+                font-size: 1.1rem;
+            }
+
+            #map {
+                height: 300px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .container {
+                padding: 10px;
+            }
+
+            .form-card {
+                padding: 15px;
+            }
+
+            .form-input, .search-btn, .result-input {
+                padding: 14px 16px;
+            }
+        }
+
+        /* Scrollbar Styling */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--bg-secondary);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--border-secondary);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--text-muted);
+        }
+
+        /* Loading Animation */
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 2px solid var(--border-primary);
+            border-radius: 50%;
+            border-top-color: var(--accent-primary);
+            animation: spin 1s ease-in-out infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>PlateFinder</h1>
+            <h2 style="margin-bottom: 10px;">Find Moroccan Plates & Cities Easily</h2>
+            <h3 style="font-size: small; margin: 0;">I vibe-coded ts 😊👍</h3>
+        </div>
+
+        <div class="forms-container">
+            <!-- Code to City Form -->
+            <div class="form-card">
+                <h3 class="form-title">Code → City</h3>
+                <div class="input-group">
+                    <label class="input-label" for="plateInput">Enter Regional Code</label>
+                    <input type="text" id="plateInput" class="form-input" placeholder="e.g., 14" maxlength="3">
+                </div>
+                <button id="searchButton" class="search-btn">Find City</button>
+                <div class="divider"></div>
+                <div class="result-container">
+                    <input type="text" id="plateResult" class="result-input" placeholder="City will appear here" readonly>
+                </div>
+            </div>
+
+            <!-- City to Code Form -->
+            <div class="form-card">
+                <h3 class="form-title">City → Code</h3>
+                <div class="input-group">
+                    <label class="input-label" for="cityInput">Enter or Select City</label>
+                    <div class="dropdown-input">
+                        <input type="text" id="cityInput" class="form-input" placeholder="Type city name..." autocomplete="off">
+                        <div id="cityDropdown" class="dropdown-list"></div>
+                    </div>
+                </div>
+                <button id="reverseLookupButton" class="search-btn">Find Code</button>
+                <div class="divider"></div>
+                <div class="result-container">
+                    <input type="text" id="cityResult" class="result-input" placeholder="Regional code will appear here" readonly>
+                </div>
+            </div>
+        </div>
+
+        <div class="map-container">
+            <div id="map"></div>
+        </div>
+
+        <div class="footer">
+            <p>© 2025 PlateFinder - Created by Samy</p>
+        </div>
+    </div>
+
+    <!-- Leaflet JavaScript -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+    
+    <script>
+        // Wait for DOM and Leaflet to be ready
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeApp();
+        });
+
+        function initializeApp() {
+            const regionalCodes = [
+                "Rabat",
+                "Salé",
+                "Sala Al-Jadida",
+                "Skhirat-Temara",
+                "Khémisset",
+                "Casablanca (Anfa)",
+                "Casablanca (Hay Mohammadi-Aïn Sebaâ)",
+                "Casablanca (Hay Hassani)",
+                "Casablanca (Benmsik)",
+                "Casablanca (Moulay Rachid)",
+                "Casablanca (Al Fida Derb Sultan)",
+                "Casablanca (Mechouar)",
+                "Casablanca (Sidi Bernoussi-Zenata)",
+                "Mohammedia",
+                "Fès (Jdid)",
+                "Fès (Medina)",
+                "Fès (Zouagha - Moulay Yacoub)",
+                "Sefrou",
+                "Boulmane",
+                "Meknès Menzah",
+                "Meknès Ismailia",
+                "El Hajeb",
+                "Ifrane",
+                "Khénifra",
+                "Errachidia",
+                "Marrakech (Menara)",
+                "Marrakech (Medina)",
+                "Marrakech (Sidi Youssef Ben-Ali)",
+                "El-Haouz",
+                "Chichaoua",
+                "Kelâat Es-Sraghna",
+                "Essaouira",
+                "Agadir (Ida-Outanane)",
+                "Inezgane - Ait Melloul",
+                "Chtouka Aït Baha",
+                "Taroudant",
+                "Tiznit",
+                "Ouarzazate",
+                "Zagora",
+                "Tangier (Asilah)",
+                "Tanger (Fahs-Bni Makada)",
+                "Larache",
+                "Chefchaouen",
+                "Tétouan",
+                "Al-Hoceima",
+                "Taza",
+                "Taounate",
+                "Oujda",
+                "Berkane",
+                "Nador",
+                "Taourirt",
+                "Jerada",
+                "Figuig",
+                "Asfi",
+                "El Jadida",
+                "Settat",
+                "Khouribga",
+                "Benslimane",
+                "Kénitra",
+                "Sidi Kacem",
+                "Béni Mellal",
+                "Azilal",
+                "Smara",
+                "Guelmim",
+                "Tan-Tan",
+                "Tata",
+                "Assa-Zag",
+                "Laâyoune",
+                "Boujdour",
+                "Oued Ed-Dahab",
+                "Aousserd",
+                "Casablanca (Ain-Chock)",
+                "Casablanca (Nouacer)",
+                "Casablanca (Mediouna)",
+                "M'diq - Fnideq",
+                "Driouch",
+                "Guercif",
+                "Ouazzane",
+                "Sidi Slimane",
+                "Midelt",
+                "Berrechid",
+                "Sidi Bennour",
+                "Ben Guerir",
+                "Fkih Ben Salah",
+                "Youssoufia",
+                "Tinghir",
+                "Sidi Ifni",
+                "Tarfaya",
+                "Lagouira"
+            ];
+
+            // Coordinates for major Moroccan cities (latitude, longitude)
+            const cityCoordinates = {
+                "Rabat": [34.0209, -6.8416],
+                "Salé": [34.0531, -6.7985],
+                "Sala Al-Jadida": [34.0531, -6.7985],
+                "Skhirat-Temara": [33.8547, -7.0342],
+                "Khémisset": [33.8244, -6.0658],
+                "Casablanca (Anfa)": [33.5731, -7.5898],
+                "Casablanca (Hay Mohammadi-Aïn Sebaâ)": [33.5731, -7.5898],
+                "Casablanca (Hay Hassani)": [33.5731, -7.5898],
+                "Casablanca (Benmsik)": [33.5731, -7.5898],
+                "Casablanca (Moulay Rachid)": [33.5731, -7.5898],
+                "Casablanca (Al Fida Derb Sultan)": [33.5731, -7.5898],
+                "Casablanca (Mechouar)": [33.5731, -7.5898],
+                "Casablanca (Sidi Bernoussi-Zenata)": [33.5731, -7.5898],
+                "Mohammedia": [33.6863, -7.3824],
+                "Fès (Jdid)": [34.0181, -5.0078],
+                "Fès (Medina)": [34.0181, -5.0078],
+                "Fès (Zouagha - Moulay Yacoub)": [34.0181, -5.0078],
+                "Sefrou": [33.8307, -4.8372],
+                "Boulmane": [33.3626, -4.7329],
+                "Meknès Menzah": [33.8935, -5.5473],
+                "Meknès Ismailia": [33.8935, -5.5473],
+                "El Hajeb": [33.6873, -5.3692],
+                "Ifrane": [33.5228, -5.1106],
+                "Khénifra": [32.9359, -5.6675],
+                "Errachidia": [31.9314, -4.4238],
+                "Marrakech (Menara)": [31.6295, -7.9811],
+                "Marrakech (Medina)": [31.6295, -7.9811],
+                "Marrakech (Sidi Youssef Ben-Ali)": [31.6295, -7.9811],
+                "El-Haouz": [31.6295, -7.9811],
+                "Chichaoua": [31.5407, -8.7562],
+                "Kelâat Es-Sraghna": [32.0587, -7.4072],
+                "Essaouira": [31.5085, -9.7595],
+                "Agadir (Ida-Outanane)": [30.4278, -9.5981],
+                "Inezgane - Ait Melloul": [30.3550, -9.5316],
+                "Chtouka Aït Baha": [30.1135, -9.3213],
+                "Taroudant": [30.4735, -8.8770],
+                "Tiznit": [29.6974, -9.7316],
+                "Ouarzazate": [30.9189, -6.8934],
+                "Zagora": [30.3290, -5.8372],
+                "Tangier (Asilah)": [35.7595, -5.8340],
+                "Tanger (Fahs-Bni Makada)": [35.7595, -5.8340],
+                "Larache": [35.1932, -6.1563],
+                "Chefchaouen": [35.1688, -5.2636],
+                "Tétouan": [35.5889, -5.3626],
+                "Al-Hoceima": [35.2517, -3.9372],
+                "Taza": [34.2133, -4.0103],
+                "Taounate": [34.5367, -4.6372],
+                "Oujda": [34.6814, -1.9086],
+                "Berkane": [34.9213, -2.3181],
+                "Nador": [35.1681, -2.9287],
+                "Taourirt": [34.4092, -2.8953],
+                "Jerada": [34.3108, -2.1625],
+                "Figuig": [32.1087, -1.2315],
+                "Asfi": [32.2994, -9.2372],
+                "El Jadida": [33.2316, -8.5007],
+                "Settat": [33.0013, -7.6217],
+                "Khouribga": [32.8811, -6.9063],
+                "Benslimane": [33.6145, -7.1215],
+                "Kénitra": [34.2610, -6.5802],
+                "Sidi Kacem": [34.2214, -5.7081],
+                "Béni Mellal": [32.3373, -6.3498],
+                "Azilal": [31.9647, -6.5659],
+                "Smara": [26.7386, -11.6718],
+                "Guelmim": [28.9870, -10.0574],
+                "Tan-Tan": [28.4378, -11.1032],
+                "Tata": [29.7474, -7.9702],
+                "Assa-Zag": [27.9490, -9.7263],
+                "Laâyoune": [27.1536, -13.2033],
+                "Boujdour": [26.1218, -14.4815],
+                "Oued Ed-Dahab": [23.7058, -15.9582],
+                "Aousserd": [22.5743, -14.0525],
+                "Casablanca (Ain-Chock)": [33.5731, -7.5898],
+                "Casablanca (Nouacer)": [33.5731, -7.5898],
+                "Casablanca (Mediouna)": [33.5731, -7.5898],
+                "M'diq - Fnideq": [35.6849, -5.3547],
+                "Driouch": [34.9764, -3.3913],
+                "Guercif": [34.2264, -3.3518],
+                "Ouazzane": [34.7893, -5.5746],
+                "Sidi Slimane": [34.2654, -5.9265],
+                "Midelt": [32.6852, -4.7473],
+                "Berrechid": [33.2650, -7.5835],
+                "Sidi Bennour": [32.6529, -8.4263],
+                "Ben Guerir": [32.2361, -7.9538],
+                "Fkih Ben Salah": [32.5006, -6.6919],
+                "Youssoufia": [32.2465, -8.5329],
+                "Tinghir": [31.5146, -5.5334],
+                "Sidi Ifni": [29.3792, -10.1731],
+                "Tarfaya": [27.9397, -12.9204],
+                "Lagouira": [21.3273, -17.0653]
+            };
+
+            // Initialize the map
+            let map = L.map('map').setView([31.7917, -7.0926], 6); // Center on Morocco
+
+            // Add OpenStreetMap tiles with dark theme
+            L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+                attribution: '© OpenStreetMap contributors, © CARTO',
+                maxZoom: 19
+            }).addTo(map);
+
+            let currentMarker = null;
+
+            // Code to City functionality
+            document.getElementById("searchButton").addEventListener("click", function() {
+                performCodeSearch();
+            });
+
+            document.getElementById("plateInput").addEventListener("keypress", function(event) {
+                if (event.key === "Enter") {
+                    performCodeSearch();
+                }
+            });
+
+            function performCodeSearch() {
+                let plateCodeStr = document.getElementById("plateInput").value.trim();
+                let plateCodeInt = 0;
+                try {
+                    plateCodeInt = parseInt(plateCodeStr);
+                } catch (error) {
+                    plateCodeInt = 0;
+                }
+                
+                if (plateCodeInt > 0 && plateCodeInt <= regionalCodes.length) {
+                    const cityName = regionalCodes[plateCodeInt - 1];
+                    document.getElementById("plateResult").value = cityName;
+                    
+                    updateMapLocation(cityName, plateCodeInt, 'code');
+                } else {
+                    document.getElementById("plateResult").value = "Code not found";
+                }
+            }
+
+            // City to Code functionality
+            const cityInput = document.getElementById("cityInput");
+            const cityDropdown = document.getElementById("cityDropdown");
+            const reverseLookupButton = document.getElementById("reverseLookupButton");
+            const cityResult = document.getElementById("cityResult");
+
+            // Setup dropdown functionality
+            cityInput.addEventListener("input", function() {
+                const query = this.value.toLowerCase().trim();
+                if (query.length > 0) {
+                    const filteredCities = regionalCodes.filter(city => 
+                        city.toLowerCase().includes(query)
+                    );
+                    displayDropdown(filteredCities);
+                } else {
+                    hideDropdown();
+                }
+            });
+
+            cityInput.addEventListener("keypress", function(event) {
+                if (event.key === "Enter") {
+                    performCitySearch();
+                    hideDropdown();
+                }
+            });
+
+            // Hide dropdown when clicking outside
+            document.addEventListener("click", function(event) {
+                if (!event.target.closest('.dropdown-input')) {
+                    hideDropdown();
+                }
+            });
+
+            reverseLookupButton.addEventListener("click", function() {
+                performCitySearch();
+            });
+
+            function displayDropdown(cities) {
+                cityDropdown.innerHTML = '';
+                if (cities.length > 0) {
+                    cities.slice(0, 8).forEach(city => { // Limit to 8 results
+                        const item = document.createElement('div');
+                        item.className = 'dropdown-item';
+                        item.textContent = city;
+                        item.addEventListener('click', function() {
+                            cityInput.value = city;
+                            hideDropdown();
+                            performCitySearch();
+                        });
+                        cityDropdown.appendChild(item);
+                    });
+                    cityDropdown.classList.add('show');
+                } else {
+                    hideDropdown();
+                }
+            }
+
+            function hideDropdown() {
+                cityDropdown.classList.remove('show');
+            }
+
+            function performCitySearch() {
+                const cityName = cityInput.value.trim();
+                const cityIndex = regionalCodes.findIndex(city => 
+                    city.toLowerCase() === cityName.toLowerCase()
+                );
+                
+                if (cityIndex !== -1) {
+                    const regionalCode = cityIndex + 1;
+                    cityResult.value = `Regional Code: ${regionalCode}`;
+                    updateMapLocation(cityName, regionalCode, 'city');
+                } else {
+                    cityResult.value = "City not found";
+                }
+            }
+
+            function updateMapLocation(cityName, code, searchType) {
+                const coords = cityCoordinates[cityName];
+                if (coords) {
+                    // Remove previous marker if exists
+                    if (currentMarker) {
+                        map.removeLayer(currentMarker);
+                    }
+                    
+                    // Add new marker and zoom to location
+                    currentMarker = L.marker(coords).addTo(map)
+                        .bindPopup(`<b>${cityName}</b><br>Regional Code: ${code}`)
+                        .openPopup();
+                    
+                    // Zoom to the city
+                    map.setView(coords, 10);
+                    
+                    // Update the other form if search was successful
+                    if (searchType === 'code') {
+                        cityInput.value = cityName;
+                        cityResult.value = `Regional Code: ${code}`;
+                    } else {
+                        document.getElementById("plateInput").value = code;
+                        document.getElementById("plateResult").value = cityName;
+                    }
+                }
+            }
+        } // Close initializeApp function
+    </script>
+</body>
+</html>
