@@ -229,6 +229,39 @@
             transform: translateY(0);
         }
 
+        .reference-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 12px 20px;
+            background: linear-gradient(135deg, var(--success), var(--success-hover));
+            color: white;
+            border: none;
+            border-radius: var(--radius);
+            font-size: 0.95rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            margin-top: 15px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .reference-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(16, 185, 129, 0.3);
+        }
+
+        .reference-btn:active {
+            transform: translateY(0);
+        }
+
+        .reference-btn::before {
+            content: '📋';
+            font-size: 1.1rem;
+        }
+
         .result-container {
             margin-top: 20px;
         }
@@ -359,6 +392,9 @@
             <h1>PlateFinder</h1>
             <h2 style="margin-bottom: 10px;">Find Moroccan Plates & Cities Easily</h2>
             <h3 style="font-size: small; margin: 0;">I vibe-coded ts 😊👍</h3>
+            <a href="license plates morocco.png" target="_blank" class="reference-btn">
+                View Full Reference Map
+            </a>
         </div>
 
         <div class="forms-container">
